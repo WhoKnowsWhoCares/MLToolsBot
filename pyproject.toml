@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "mltoolsbot"
+version = "0.1.0"
+description = "Repository for telegram bot which helps user with machine learning through communication and commands"
+authors = ["Alexander <as.frantsev@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-dotenv = "^1.0.0"
+loguru = "^0.7.2"
+python-telegram-bot = "^20.7"
+g4f = "0.1.9.3"
+
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
