@@ -11,7 +11,7 @@ WORKDIR /app
 
 RUN pip install poetry
 COPY poetry.lock pyproject.toml /app/
-RUN poetry install --without dev, test
+RUN poetry install --without dev,test
 
 
 FROM python:3.10-slim as base
