@@ -11,23 +11,23 @@ WORKDIR /app
 
 RUN pip install poetry
 COPY poetry.lock pyproject.toml /app/
-RUN poetry install --without dev
+RUN poetry install --without dev, test
 
 
 FROM python:3.10-slim as base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONFAULTHANDLER=1 \
-    PYTHONHASHSEED=random \
     PYTHONUNBUFFERED=1
 ENV PATH="/app/.venv/bin:$PATH"
+ENV BOT_TOKEN: ${BOT_TOKEN} \
+    CHAT_ID: ${CHAT_ID} \
+    SD_SERVER_URL: ${SD_SERVER_URL}
 
 COPY --from=builder /app /app
+COPY main.py /app/
 WORKDIR /app
 
-COPY main.py .env /app/
-COPY src/ /app/src/
-RUN mkdir /app/logs
-
-USER daemon
-CMD ["poetry", "run python", "main.py"]
+RUN adduser myuser && chown -R myuser /app
+USER myuser
+CMD ["python", "main.py"]
