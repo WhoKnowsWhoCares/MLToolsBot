@@ -7,5 +7,5 @@ services:
     #   - BOT_TOKEN = ${BOT_TOKEN}
     #   - CHAT_ID = ${CHAT_ID}
     #   - SD_SERVER_URL = ${SD_SERVER_URL}
-    env_file:
-      - .env
+    # env_file:
+    #   - .env
