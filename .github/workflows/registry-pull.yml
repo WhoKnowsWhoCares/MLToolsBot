@@ -1,8 +1,6 @@
 name: registry-pull
 
 on:
-  push:
-    branches: ["master", "prod"]
   workflow_run:
     workflows: ["build-test", "docker-build-deploy"]
     branches: ["master", "prod"]
