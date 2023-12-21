@@ -9,9 +9,6 @@ on:
 env:
   REGISTRY: registry.frants.site
   IMAGE_NAME: mltoolsbot
-  BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-  CHAT_ID: ${{ secrets.CHAT_ID }}
-  SD_SERVER_URL: ${{ secrets.SD_SERVER_URL }}
 
 jobs:
   build:
