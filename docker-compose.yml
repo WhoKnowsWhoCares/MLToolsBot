@@ -1,14 +1,5 @@
-version: "3.8"
+version: "3"
 
 services:
-  app:
-    container_name: MLToolsBot
-    restart: unless-stopped
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      BOT_TOKEN: ${BOT_TOKEN}
-      CHAT_ID: ${CHAT_ID}
-      SD_SERVER_URL: ${SD_SERVER_URL}
-    command: ["python", "main.py"]
+  MLToolsBot:
+    image: registry.frants.site/mltoolsbot:latest
