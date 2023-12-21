@@ -16,12 +16,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    # steps:
-    #   - uses: actions/checkout@v3
-    #   - name: Build the Docker image
-    #     run: docker build . --file Dockerfile
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -46,3 +40,21 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  prepare-environment:
+    runs-on: self-hosted
+    needs: build
+    steps:
+      - name: Stop and remove containers, networks
+        run: docker-compose down
+      - name: Remove unused data
+        run: docker system prune -a -f
+
+  deploy:
+    runs-on: self-hosted
+    needs: prepare-environment
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v3
+      - name: docker-compose
+        run: docker-compose up -d
