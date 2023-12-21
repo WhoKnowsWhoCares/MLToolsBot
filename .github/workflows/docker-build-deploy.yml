@@ -1,0 +1,48 @@
+name: docker-build-deploy
+
+on:
+  push:
+    branches: ["master", "prod"]
+  pull_request:
+    branches: ["master", "prod"]
+
+env:
+  REGISTRY: registry.frants.site
+  IMAGE_NAME: ${{ github.repository }}
+  BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+  CHAT_ID: ${{ secrets.CHAT_ID }}
+  SD_SERVER_URL: ${{ secrets.SD_SERVER_URL }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # steps:
+    #   - uses: actions/checkout@v3
+    #   - name: Build the Docker image
+    #     run: docker build . --file Dockerfile
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Login to my Registry (${{ env.REGISTRY }})
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Find Package Version
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Build And Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
