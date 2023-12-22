@@ -114,6 +114,10 @@ async def text2img(update: Update, context: ContextTypes.DEFAULT_TYPE):
         as a byte stream.
     """
     global last_message, run_text2img
+    if update.effective_chat.id != chat_id:
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, text="Sorry, not public just yet"
+        )
     if last_message != "":
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Proceed request..."
