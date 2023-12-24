@@ -33,7 +33,8 @@ jobs:
       - name: Build And Push Backend
         uses: docker/build-push-action@v5
         with:
-          context: .
+          # context: .
+          no-cache: true
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
