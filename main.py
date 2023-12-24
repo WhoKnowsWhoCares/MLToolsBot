@@ -113,7 +113,7 @@ async def text2img(update: Update, context: ContextTypes.DEFAULT_TYPE):
         If the image generation is successful, the generated image is returned
         as a byte stream.
     """
-    global last_message, run_text2img, CHAT_ID
+    global last_message, run_text2img
     if update.effective_chat.id != int(CHAT_ID):
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Sorry, not public just yet"
@@ -157,7 +157,6 @@ async def call_api_sd(description: str):
         If the image generation is successful, the generated image is returned
         as a byte stream.
     """
-    global SD_SERVER_URL
     payload["prompt"] = description
     try:
         async with httpx.AsyncClient() as client:
@@ -210,7 +209,7 @@ async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await text2img(update, context)
     else:
         await context.bot.send_message(
-            chat_id=update.effective_chat.id, text="Send command what to do?"
+            chat_id=update.effective_chat.id, text="Send command what to do with this"
         )
 
 
