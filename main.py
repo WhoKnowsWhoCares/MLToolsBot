@@ -68,12 +68,16 @@ async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         async with limiter:
             response = await call_api_g4f(last_message)
+            await context.bot.send_message(
+                chat_id=update.effective_chat.id, text=response
+            )
         last_message = ""
         run_text2text = False
     else:
-        response = "Please write your request"
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, text="Please write your request"
+        )
         run_text2text = True
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
 
 
 async def call_api_g4f(message: str) -> str:
@@ -91,10 +95,10 @@ async def call_api_g4f(message: str) -> str:
             provider=g4f.Provider.ChatgptAi,
             messages=[{"role": "user", "content": message}],
         )
+        return response
     except Exception as e:
         logger.error(e)
         return "Sorry, something went wrong"
-    return response
 
 
 async def text2img(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -136,9 +140,10 @@ async def text2img(update: Update, context: ContextTypes.DEFAULT_TYPE):
         last_message = ""
         run_text2img = False
     else:
-        response = "Please write image description"
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, text="Please write image description"
+        )
         run_text2img = True
-        await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
 
 
 async def call_api_sd(description: str):
