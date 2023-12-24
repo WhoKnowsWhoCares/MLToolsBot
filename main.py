@@ -66,6 +66,7 @@ async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Proceed request..."
         )
+
         async with limiter:
             response = await call_api_g4f(last_message)
             await context.bot.send_message(
@@ -95,6 +96,7 @@ async def call_api_g4f(message: str) -> str:
             provider=g4f.Provider.ChatgptAi,
             messages=[{"role": "user", "content": message}],
         )
+        logger.info(f"G4F response: {response}")
         return response
     except Exception as e:
         logger.error(e)
