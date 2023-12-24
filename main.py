@@ -18,9 +18,9 @@ from aiolimiter import AsyncLimiter
 
 load_dotenv()
 
-chat_id = os.getenv("CHAT_ID")
-bot_token = os.getenv("BOT_TOKEN")
-sd_url = os.getenv("SD_SERVER_URL")
+CHAT_ID = os.getenv("CHAT_ID")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+SD_SERVER_URL = os.getenv("SD_SERVER_URL")
 last_message = ""
 run_text2text = False
 run_text2img = False
@@ -113,8 +113,8 @@ async def text2img(update: Update, context: ContextTypes.DEFAULT_TYPE):
         If the image generation is successful, the generated image is returned
         as a byte stream.
     """
-    global last_message, run_text2img
-    if update.effective_chat.id != int(chat_id):
+    global last_message, run_text2img, CHAT_ID
+    if update.effective_chat.id != int(CHAT_ID):
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Sorry, not public just yet"
         )
@@ -157,11 +157,14 @@ async def call_api_sd(description: str):
         If the image generation is successful, the generated image is returned
         as a byte stream.
     """
+    global SD_SERVER_URL
     payload["prompt"] = description
     try:
         async with httpx.AsyncClient() as client:
-            logger.info(f"Request for image to {sd_url}")
-            response = await client.post(url=f"{sd_url}/sdapi/v1/txt2img", json=payload)
+            logger.info(f"Request for image to {SD_SERVER_URL}")
+            response = await client.post(
+                url=f"{SD_SERVER_URL}/sdapi/v1/txt2img", json=payload
+            )
             image = io.BytesIO(base64.b64decode(response.json()["images"][0]))
     except Exception as e:
         logger.error(e)
@@ -212,7 +215,7 @@ async def text_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 if __name__ == "__main__":
-    application = ApplicationBuilder().token(bot_token).build()
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help))
