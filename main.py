@@ -20,7 +20,7 @@ load_dotenv()
 
 chat_id = os.getenv("CHAT_ID")
 bot_token = os.getenv("BOT_TOKEN")
-sd_url = os.getenv("sd_server_url")
+sd_url = os.getenv("SD_SERVER_URL")
 last_message = ""
 run_text2text = False
 run_text2img = False
@@ -71,7 +71,7 @@ async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         last_message = ""
         run_text2text = False
     else:
-        response = "Could you write your request?"
+        response = "Please write your request"
         run_text2text = True
     await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
 
@@ -114,10 +114,11 @@ async def text2img(update: Update, context: ContextTypes.DEFAULT_TYPE):
         as a byte stream.
     """
     global last_message, run_text2img
-    if update.effective_chat.id != chat_id:
+    if update.effective_chat.id != int(chat_id):
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Sorry, not public just yet"
         )
+        return
     if last_message != "":
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Proceed request..."
@@ -159,9 +160,8 @@ async def call_api_sd(description: str):
     payload["prompt"] = description
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.post(
-                url=f"http://{sd_url}/sdapi/v1/txt2img", json=payload
-            )
+            logger.info(f"Request for image to {sd_url}")
+            response = await client.post(url=f"{sd_url}/sdapi/v1/txt2img", json=payload)
             image = io.BytesIO(base64.b64decode(response.json()["images"][0]))
     except Exception as e:
         logger.error(e)
