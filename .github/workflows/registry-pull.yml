@@ -2,7 +2,7 @@ name: Deploy by Runner
 
 on:
   workflow_run:
-    workflows: ["build-test", "docker-build-deploy"]
+    workflows: ["Tests", "Docker Build"]
     branches: ["master", "prod"]
     types:
       - completed
