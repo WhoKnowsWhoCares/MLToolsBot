@@ -96,7 +96,7 @@ async def call_api_g4f(message: str) -> str:
             messages=[{"role": "user", "content": message}],
         )
         logger.info(f"G4F response: {response}")
-        return response
+        return response if response != "" else "Service now unavailable"
     except Exception as e:
         logger.error(e)
         return "Sorry, something went wrong"
