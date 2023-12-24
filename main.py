@@ -66,7 +66,6 @@ async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Proceed request..."
         )
-
         async with limiter:
             response = await call_api_g4f(last_message)
             await context.bot.send_message(
