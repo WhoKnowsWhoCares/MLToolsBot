@@ -15,6 +15,10 @@ jobs:
         run: docker compose down
       - name: Remove unused data
         run: docker system prune -a -f
+      - name: Cleanup build folder
+        run: |
+          rm -rf ./* || true
+          rm -rf ./.??* || true
 
   deploy:
     runs-on: self-hosted
@@ -31,8 +35,8 @@ jobs:
           touch docker-compose.yml
           echo version:"3" >> docker-compose.yml
           echo services: >> docker-compose.yml
-          echo -e "\t MLToolsBot:" >> docker-compose.yml
-          echo -e "\t\t image: registry.frants.site/mltoolsbot:latest" >> docker-compose.yml
-          echo -e "\t\t env_file: .env" >> docker-compose.yml
+          echo -e "  MLToolsBot:" >> docker-compose.yml
+          echo -e "    image: registry.frants.site/mltoolsbot:latest" >> docker-compose.yml
+          echo -e "    env_file: .env" >> docker-compose.yml
       - name: Run docker-compose
         run: docker compose up -d
