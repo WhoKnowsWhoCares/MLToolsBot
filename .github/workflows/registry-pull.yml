@@ -20,13 +20,19 @@ jobs:
     runs-on: self-hosted
     needs: prepare-environment
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
       - name: Create env file
         run: |
           touch .env
           echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> .env
           echo CHAT_ID=${{ secrets.CHAT_ID }} >> .env
           echo SD_SERVER_URL=${{ secrets.SD_SERVER_URL }} >> .env
-      - name: Docker compose
+      - name: Create docker-compose
+        run: |
+          touch docker-compose.yml
+          echo version:"3" >> docker-compose.yml
+          echo services: >> docker-compose.yml
+          echo -e "\t MLToolsBot:" >> docker-compose.yml
+          echo -e "\t\t image: registry.frants.site/mltoolsbot:latest" >> docker-compose.yml
+          echo -e "\t\t env_file: .env" >> docker-compose.yml
+      - name: Run docker-compose
         run: docker compose up -d
