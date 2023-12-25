@@ -20,7 +20,13 @@ jobs:
     runs-on: self-hosted
     needs: prepare-environment
     steps:
-      - name: checkout repo
+      - name: Checkout repo
         uses: actions/checkout@v4
-      - name: docker compose
+      - name: Create env file
+        run: |
+          touch .env
+          echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> .env
+          echo CHAT_ID=${{ secrets.CHAT_ID }} >> .env
+          echo SD_SERVER_URL=${{ secrets.SD_SERVER_URL }} >> .env
+      - name: Docker compose
         run: docker compose up -d
