@@ -18,7 +18,6 @@ jobs:
       - name: Cleanup build folder
         run: |
           rm -rf ./* || true
-          rm -rf ./.??* || true
 
   deploy:
     runs-on: self-hosted
