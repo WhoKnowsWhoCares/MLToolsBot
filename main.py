@@ -80,6 +80,7 @@ async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         run_text2text = True
 
 
+# TODO: change service to ChatGPT
 async def call_api_g4f(message: str) -> str:
     """
     Makes a request to the G4F API to generate a response based on a given
