@@ -3,7 +3,7 @@ name: Deploy by Runner
 on:
   workflow_run:
     workflows: ["Tests", "Docker Build"]
-    branches: ["master", "prod"]
+    branches: ["prod"]
     types:
       - completed
 
@@ -18,7 +18,6 @@ jobs:
       - name: Cleanup build folder
         run: |
           rm -rf ./* || true
-          rm -rf ./.??* || true
 
   deploy:
     runs-on: self-hosted
@@ -26,10 +25,10 @@ jobs:
     steps:
       - name: Create env file
         run: |
-          touch .env
-          echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> .env
-          echo CHAT_ID=${{ secrets.CHAT_ID }} >> .env
-          echo SD_SERVER_URL=${{ secrets.SD_SERVER_URL }} >> .env
+          touch config.env
+          echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> config.env
+          echo CHAT_ID=${{ secrets.CHAT_ID }} >> config.env
+          echo SD_SERVER_URL=${{ secrets.SD_SERVER_URL }} >> config.env
       - name: Create docker-compose
         run: |
           touch docker-compose.yml
@@ -37,6 +36,6 @@ jobs:
           echo -e "services: " >> docker-compose.yml
           echo -e "  MLToolsBot: " >> docker-compose.yml
           echo -e "    image: registry.frants.site/mltoolsbot:latest" >> docker-compose.yml
-          echo -e "    env_file: .env" >> docker-compose.yml
+          echo -e "    env_file: config.env" >> docker-compose.yml
       - name: Run docker-compose
         run: docker compose up -d
