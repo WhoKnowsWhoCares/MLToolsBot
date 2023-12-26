@@ -25,6 +25,7 @@ last_message = ""
 run_text2text = False
 run_text2img = False
 limiter = AsyncLimiter(2)
+known_users = {}
 
 payload = {"prompt": "", "steps": 20, "script_name": "", "sampler_name": ""}
 
