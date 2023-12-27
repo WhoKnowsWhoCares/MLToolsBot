@@ -30,7 +30,13 @@ known_users = {}
 
 payload = {
     "prompt": "",
+    "negative_prompt": "(deformed, destorted, disfigured: 1.3),stacked torsos,\
+        totem pole,poorly drawn,bad anatomy,extra limb,missing limb,floating limbs,\
+        (mutated hands and fingers: 1.4),disconnected limbs,mutation,mutated,ugly,\
+        disgusting,blur,blurry,amputation,out of focus,childish,surreal,text,\
+        by <bad-artist:0.8>,by <bad-artist-anime:0.8>,<bad_prompt_version2:0.8>,<bad-hands-5:0.8>",
     "steps": 20,
+    "sampler_index": "DPM++ 2M Karras",  # k_dpmpp_sde_ka
     "script_name": "",
     "sampler_name": "",
     "override_settings": {
