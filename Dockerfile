@@ -25,8 +25,8 @@ ENV BOT_TOKEN=${BOT_TOKEN} \
     SD_SERVER_URL=${SD_SERVER_URL}
 
 COPY --from=builder /app /app
-RUN adduser myuser && chown -R myuser /app
-USER myuser
+# RUN adduser myuser && chown -R myuser /app
+# USER myuser
 
 WORKDIR /app
 COPY main.py /app/

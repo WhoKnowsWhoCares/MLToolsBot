@@ -1,10 +1,12 @@
-version: "3"
-
+version: "3.8"
 services:
   MLToolsBot:
+    container_name: mltoolsbot
+    restart: always
+    env_file:
+      - .env
+      # - prod.env
     image: registry.frants.site/mltoolsbot:latest
-    env_file: .env
-    # environment:
-    #   - BOT_TOKEN=${BOT_TOKEN}
-    #   - CHAT_ID=${CHAT_ID}
-    #   - SD_SERVER_URL=${SD_SERVER_URL}
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile

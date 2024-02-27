@@ -1,5 +1,4 @@
 import os
-import g4f
 import io
 import base64
 import httpx
@@ -14,6 +13,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
 )
+from functools import wraps
 from aiolimiter import AsyncLimiter
 
 load_dotenv()
@@ -21,6 +21,7 @@ load_dotenv()
 CHAT_ID = os.getenv("CHAT_ID")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 SD_SERVER_URL = os.getenv("SD_SERVER_URL")
+LLM_SERVER_URL = os.getenv("LLM_SERVER_URL")
 last_message = ""
 run_text2text = False
 run_text2img = False
@@ -28,7 +29,7 @@ run_login = False
 limiter = AsyncLimiter(2)
 known_users = {}
 
-payload = {
+sd_payload = {
     "prompt": "",
     "negative_prompt": "(deformed, destorted, disfigured: 1.3),stacked torsos,\
         totem pole,poorly drawn,bad anatomy,extra limb,missing limb,floating limbs,\
@@ -44,11 +45,38 @@ payload = {
     },
 }
 
+llm_payload = {
+    "model": "gemma",
+    "keep_alive": "10m",
+    "stream": False,
+}
+
 help_text = """
     Useful commands:
-    /text2text - I will generate response according to your request
-    /text2img - I will create image according to your description
+    /text2text - I will generate response according to your request. Currently available only for English. LLM Model: Gemma 7B
+    /text2img - I will create image according to your description. SD Model: Deliberate v3
 """
+
+
+def check_auth(func):
+    """Check if user authorized"""
+
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        global known_users, run_login
+        chat_id = args[0].effective_chat.id
+        if chat_id not in known_users:
+            logger.info(f"User {chat_id} not authorized")
+            await args[1].bot.send_message(
+                chat_id=chat_id,
+                text="To use this service you should be logged in. Please write login:password to proceed",
+            )
+            run_login = True
+        else:
+            logger.info(f"User {chat_id} authorized")
+            await func(*args, **kwargs)
+
+    return wrapper
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,12 +91,13 @@ async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+@check_auth
 async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     This function takes an update and context as inputs and sends a response
     message to the user based on their request.
-    The function uses the call_api_g4f function to generate a response using
-    the G4F API.
+    The function uses the call_api_llm function to generate a response using
+    the Ollama API.
 
     Args:
         update (Update): The update object containing information about
@@ -85,7 +114,7 @@ async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id=update.effective_chat.id, text="Proceed request..."
         )
         async with limiter:
-            response = await call_api_g4f(last_message)
+            response = await call_api_llm(last_message)
             await context.bot.send_message(
                 chat_id=update.effective_chat.id, text=response
             )
@@ -98,29 +127,39 @@ async def text2text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         run_text2text = True
 
 
-# TODO: change service to ChatGPT
-async def call_api_g4f(message: str) -> str:
+async def call_api_llm(message: str) -> str:
     """
-    Makes a request to the G4F API to generate a response based on a given
-    message using ChatGPT.
+    Makes a request to the Ollama API to generate a response based on a given
+    message using Gemma model.
 
     Args:
         message (str): The message for which a response is to be generated.
-    Returns: (str) The generated response from the G4F API.
+    Returns: (str) The generated response from the Ollama API.
     """
+    payload = llm_payload.copy()
+    payload["prompt"] = message
     try:
-        response = await g4f.ChatCompletion.create_async(
-            model="gpt-3.5-turbo",
-            provider=g4f.Provider.ChatgptAi,
-            messages=[{"role": "user", "content": message}],
-        )
-        logger.info(f"G4F response: {response}")
-        return response if response != "" else "Service now unavailable"
+        async with httpx.AsyncClient() as client:
+            logger.info(f"Request to {LLM_SERVER_URL}")
+            response = await client.post(
+                url=f"{LLM_SERVER_URL}/api/generate",
+                json=payload,
+            )
+            response.raise_for_status()
+            logger.info("Response received")
+            return response.json()["response"]
+    except httpx.TimeoutException as e:
+        logger.error(f"HTTP TimeoutException for {e.request.url} - {e}")
+        return "Sorry, llm service unavailable"
+    except httpx.HTTPError as e:
+        logger.error(f"HTTP Exception for {e.request.url} - {e}")
+        return "Sorry, something went wrong"
     except Exception as e:
         logger.error(e)
         return "Sorry, something went wrong"
 
 
+@check_auth
 async def text2img(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Generates an image based on a given description.
@@ -138,16 +177,8 @@ async def text2img(update: Update, context: ContextTypes.DEFAULT_TYPE):
         as a byte stream.
     """
     global last_message, run_text2img, run_login
-    # last_message = update.message.text
     logger.info(f"Last message: {last_message}")
     chat_id = update.effective_chat.id
-    if chat_id not in known_users:
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text="To use this service you should be logged in. Please write login:password to proceed",
-        )
-        run_login = True
-        return
 
     if last_message != "":
         await context.bot.send_message(chat_id=chat_id, text="Proceed request...")
@@ -182,6 +213,7 @@ async def call_api_sd(chat_id: int, description: str):
         If the image generation is successful, the generated image is returned
         as a byte stream.
     """
+    payload = sd_payload.copy()
     payload["prompt"] = description
     try:
         async with httpx.AsyncClient() as client:
@@ -198,6 +230,7 @@ async def call_api_sd(chat_id: int, description: str):
                 json=payload,
             )
             response.raise_for_status()
+            logger.info("Image received")
             image = io.BytesIO(base64.b64decode(response.json()["images"][0]))
             return image
     except httpx.TimeoutException as e:
@@ -239,7 +272,7 @@ async def login(update: Update, context: ContextTypes.DEFAULT_TYPE):
             response.raise_for_status()
         known_users[chat_id] = {"login": login, "pwd": pwd}
         await context.bot.send_message(chat_id=chat_id, text="Success.")
-        await text2img(update, context)
+        # await text2img(update, context)
     except httpx.TimeoutException as e:
         logger.error(f"HTTP TimeoutException for {e.request.url} - {e}")
         await context.bot.send_message(
@@ -295,6 +328,7 @@ if __name__ == "__main__":
     application.add_handler(CommandHandler("text2img", text2img))
     application.add_handler(MessageHandler(filters.TEXT, text_message))
 
+    logger.info("Bot started")
     application.run_polling()
 
 # TODO: В ответ на текст: отправить прошлый пост как контекст, основной как запрос
