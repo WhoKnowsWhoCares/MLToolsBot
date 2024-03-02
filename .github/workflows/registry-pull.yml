@@ -35,7 +35,7 @@ jobs:
       - name: Checkout docker-compose file
         uses: actions/checkout@v3
         with:
-          ref: prod
+          # ref: prod
           sparse-checkout: |
             docker-compose.yml
           sparse-checkout-cone-mode: false
