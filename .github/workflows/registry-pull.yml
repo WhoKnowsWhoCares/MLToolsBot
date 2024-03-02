@@ -32,13 +32,16 @@ jobs:
     runs-on: self-hosted
     needs: prepare-environment
     steps:
-      - name: Checkout docker-compose file
-        uses: actions/checkout@v3
-        with:
-          ref: prod
-          sparse-checkout: |
-            docker-compose.yml
-          sparse-checkout-cone-mode: false
+      - name: Create docker-compose
+        run: |
+          touch docker-compose.yml
+          echo -e "version: \"3.8\"" >> docker-compose.yml
+          echo -e "services: " >> docker-compose.yml
+          echo -e "  MLToolsBot: " >> docker-compose.yml
+          echo -e "    container_name: mltoolsbot" >> docker-compose.yml
+          echo -e "    image: registry.frants.site/mltoolsbot:latest" >> docker-compose.yml
+          echo -e "    restart: always" >> docker-compose.yml
+          echo -e "    env_file: ${{ env.ENV_FILE }}" >> docker-compose.yml
       - name: Create env file
         run: |
           touch ${{ env.ENV_FILE }}
