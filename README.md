@@ -1,6 +1,6 @@
 # MLToolsBot
 
-[![Tests](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/build-test.yml/badge.svg?branch=master)](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/build-test.yml) [![Docker Build](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/docker-build-deploy.yml/badge.svg?branch=master)](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/docker-build-deploy.yml) [![Deploy by Runner](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/registry-pull.yml/badge.svg?branch=master)](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/registry-pull.yml)
+[![Tests](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/build-test.yml/badge.svg?branch=prod)](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/build-test.yml) [![Docker Build](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/docker-build-deploy.yml/badge.svg?branch=prod)](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/docker-build-deploy.yml) [![Deploy by Runner](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/registry-pull.yml/badge.svg?branch=prod)](https://github.com/WhoKnowsWhoCares/MLToolsBot/actions/workflows/registry-pull.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Repository for [telegram bot](https://t.me/MLToolsBot) which helps user with machine learning through communication and commands.

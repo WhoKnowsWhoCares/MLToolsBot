@@ -7,12 +7,21 @@ on:
     types:
       - completed
 
+env:
+  ENV_FILE: prod.env
+
 jobs:
   prepare-environment:
     runs-on: self-hosted
     steps:
-      # - name: Stop and remove containers, networks
-      #   run: docker compose down
+      - name: Check file existence
+        id: check_files
+        uses: andstor/file-existence-action@v3
+        with:
+          files: "docker-compose.yml"
+      - name: Stop containers
+        if: steps.check_files.outputs.files_exists == 'true'
+        run: docker compose down
       - name: Remove unused data
         run: docker system prune -a -f
       - name: Cleanup build folder
@@ -23,19 +32,19 @@ jobs:
     runs-on: self-hosted
     needs: prepare-environment
     steps:
+      - name: Checkout docker-compose file
+        uses: actions/checkout@v3
+        with:
+          ref: prod
+          sparse-checkout: |
+            docker-compose.yml
+          sparse-checkout-cone-mode: false
       - name: Create env file
         run: |
-          touch config.env
-          echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> config.env
-          echo CHAT_ID=${{ secrets.CHAT_ID }} >> config.env
-          echo SD_SERVER_URL=${{ secrets.SD_SERVER_URL }} >> config.env
-      - name: Create docker-compose
-        run: |
-          touch docker-compose.yml
-          echo -e "version: \"3\"" >> docker-compose.yml
-          echo -e "services: " >> docker-compose.yml
-          echo -e "  MLToolsBot: " >> docker-compose.yml
-          echo -e "    image: registry.frants.site/mltoolsbot:latest" >> docker-compose.yml
-          echo -e "    env_file: config.env" >> docker-compose.yml
+          touch ${{ env.ENV_FILE }}
+          echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> ${{ env.ENV_FILE }}
+          echo CHAT_ID=${{ secrets.CHAT_ID }} >> ${{ env.ENV_FILE }}
+          echo SD_SERVER_URL=${{ secrets.SD_SERVER_URL }} >> ${{ env.ENV_FILE }}
+          echo LLM_SERVER_URL=${{ secrets.LLM_SERVER_URL }} >> ${{ env.ENV_FILE }}
       - name: Run docker-compose
         run: docker compose up -d
