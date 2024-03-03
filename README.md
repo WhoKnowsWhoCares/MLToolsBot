@@ -6,7 +6,7 @@
 Repository for [telegram bot](https://t.me/MLToolsBot) which helps user with machine learning through communication and commands.
 
 For now there are a few commands: \
-/text2text - will generate response according to text request by ChatGPT3.5
-/text2img - will create image according to description by Stable Diffusion
+/text2text - will generate response according to text request by Gemma model \
+/text2img - will create image according to description by Stable Diffusion \
 
-In the feauture commands will expandsd_url
+In the feauture commands will expands
