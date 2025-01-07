@@ -35,7 +35,6 @@ jobs:
       - name: Create docker-compose
         run: |
           touch docker-compose.yml
-          echo -e "version: \"3.8\"" >> docker-compose.yml
           echo -e "services: " >> docker-compose.yml
           echo -e "  MLToolsBot: " >> docker-compose.yml
           echo -e "    container_name: mltoolsbot" >> docker-compose.yml

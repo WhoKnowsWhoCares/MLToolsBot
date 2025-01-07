@@ -7,7 +7,7 @@ on:
     branches: ["master", "prod"]
 
 env:
-  REGISTRY: registry.frants.site
+  REGISTRY: registry.frants.tech
   IMAGE_NAME: mltoolsbot
 
 jobs:
