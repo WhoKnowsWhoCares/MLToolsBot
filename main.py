@@ -445,10 +445,10 @@ if __name__ == "__main__":
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help))
-    application.add_handler(CommandHandler("llama32", text2text_local))
-    application.add_handler(CommandHandler("claude35", text2text_api))
-    application.add_handler(CommandHandler("text2speech", text2speech))
-    application.add_handler(CommandHandler("text2img", text2img))
+    application.add_handler(CommandHandler("llama", text2text_local))
+    application.add_handler(CommandHandler("claude", text2text_api))
+    application.add_handler(CommandHandler("audio", text2speech))
+    application.add_handler(CommandHandler("image", text2img))
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, text_message)
     )
