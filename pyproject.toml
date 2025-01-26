@@ -5,7 +5,6 @@ description = "Repository for telegram bot which helps user with machine learnin
 authors = ["Alexander <as.frantsev@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-package-mode = false
 
 
 [tool.poetry.dependencies]
@@ -15,6 +14,9 @@ python-telegram-bot = "^20.7"
 aiolimiter = "^1.1.0"
 python-dotenv = "^1.0.0"
 redis = "^5.2.1"
+anthropic = "^0.42.0"
+elevenlabs = "^1.50.5"
+pydub = "^0.25.1"
 
 
 [tool.poetry.group.dev.dependencies]

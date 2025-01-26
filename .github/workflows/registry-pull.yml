@@ -2,13 +2,13 @@ name: Deploy by Runner
 
 on:
   workflow_run:
-    workflows: ["Tests", "Docker Build"]
+    workflows: ["Docker Build"]
     branches: ["prod"]
     types:
       - completed
 
 env:
-  ENV_FILE: prod.env
+  ENV_FILE: .env
 
 jobs:
   prepare-environment:
@@ -32,21 +32,22 @@ jobs:
     runs-on: self-hosted
     needs: prepare-environment
     steps:
-      - name: Create docker-compose
-        run: |
-          touch docker-compose.yml
-          echo -e "services: " >> docker-compose.yml
-          echo -e "  MLToolsBot: " >> docker-compose.yml
-          echo -e "    container_name: mltoolsbot" >> docker-compose.yml
-          echo -e "    image: registry.frants.site/mltoolsbot:latest" >> docker-compose.yml
-          echo -e "    restart: always" >> docker-compose.yml
-          echo -e "    env_file: ${{ env.ENV_FILE }}" >> docker-compose.yml
+      - name: Checkout docker-compose file
+        uses: actions/checkout@v4
+        with:
+          ref: prod
+          sparse-checkout: |
+            docker-compose.yml
+          sparse-checkout-cone-mode: false
       - name: Create env file
         run: |
           touch ${{ env.ENV_FILE }}
           echo BOT_TOKEN=${{ secrets.BOT_TOKEN }} >> ${{ env.ENV_FILE }}
-          echo CHAT_ID=${{ secrets.CHAT_ID }} >> ${{ env.ENV_FILE }}
-          echo SD_SERVER_URL=${{ secrets.SD_SERVER_URL }} >> ${{ env.ENV_FILE }}
+          echo ANTHROPIC_TOKEN=${{ secrets.ANTHROPIC_TOKEN }} >> ${{ env.ENV_FILE }}
+          echo ELEVENLABS_TOKEN=${{ secrets.ELEVENLABS_TOKEN }} >> ${{ env.ENV_FILE }}
           echo LLM_SERVER_URL=${{ secrets.LLM_SERVER_URL }} >> ${{ env.ENV_FILE }}
+          echo SD_SERVER_URL=${{ secrets.SD_SERVER_URL }} >> ${{ env.ENV_FILE }}
+          echo REDIS_DEFAULTS=${{ secrets.REDIS_DEFAULTS }} >> ${{ env.ENV_FILE }}
+
       - name: Run docker-compose
         run: docker compose up -d
