@@ -42,11 +42,15 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          # no-cache: true
-          # push: ${{ github.event_name != 'pull_request' }}
-          #${{ steps.meta.outputs.tags }}
-          push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          outputs: type=oci,dest=/tmp/image.tar
 
-          # labels: ${{ steps.meta.outputs.labels }}
+      - name: Import image in containerd
+        run: |
+          sudo ctr i import --base-name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} --digests --all-platforms /tmp/image.tar
+
+      - name: Push image with containerd
+        run: |
+          sudo ctr --debug i push --user "${{ secrets.REGISTRY_USERNAME }}:${{ secrets.REGISTRY_PASSWORD }}" ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
