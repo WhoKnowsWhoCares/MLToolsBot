@@ -42,9 +42,11 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          no-cache: true
-          push: ${{ github.event_name != 'pull_request' }}
+          # no-cache: true
+          # push: ${{ github.event_name != 'pull_request' }}
+          #${{ steps.meta.outputs.tags }}
+          push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+
+          # labels: ${{ steps.meta.outputs.labels }}
