@@ -5,6 +5,7 @@ description = "Repository for telegram bot which helps user with machine learnin
 authors = ["Alexander <as.frantsev@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+include = ["README.md", "LICENSE"]
 
 
 [tool.poetry.dependencies]
