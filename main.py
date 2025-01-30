@@ -455,9 +455,4 @@ if __name__ == "__main__":
     application.add_handler(CallbackQueryHandler(buttons))
 
     logger.info("Bot started")
-    try:
-        application.run_polling(allowed_updates=Update.ALL_TYPES)
-    except Exception as e:
-        logger.error(e)
-        application.stop()
-        logger.info("Bot stopped")
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
