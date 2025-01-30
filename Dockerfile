@@ -1,4 +1,4 @@
-FROM python:3.10-slim AS builder
+FROM python:3.11-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONFAULTHANDLER=1 \
@@ -12,10 +12,10 @@ WORKDIR /app
 RUN apt-get update
 RUN pip install poetry
 COPY poetry.lock pyproject.toml /app/
-RUN poetry install --without dev,test
+RUN poetry install --without dev,test --no-root
 
 
-FROM python:3.10-slim AS base
+FROM python:3.11-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONFAULTHANDLER=1 \
