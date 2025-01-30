@@ -29,8 +29,6 @@ ENV BOT_TOKEN=${BOT_TOKEN} \
     REDIS_DEFAULTS=${REDIS_DEFAULTS}
 
 COPY --from=builder /app /app
-# RUN adduser myuser && chown -R myuser /app
-# USER myuser
 
 WORKDIR /app
 COPY main.py redis-init.sh /app/
