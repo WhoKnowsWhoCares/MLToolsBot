@@ -10,3 +10,30 @@ For now there are a few commands: \
 /text2img - will create image according to description by Stable Diffusion \
 
 In the feauture commands will expands
+
+## Installation
+
+```bash
+pip install -e .
+```
+
+## Usage
+
+1. Update the bot token in `src/config.py`
+2. Run the bot:
+   ```bash
+   telegram-bot
+   ```
+
+## Development
+
+1. Clone the repository
+2. Create a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. Install in development mode:
+   ```bash
+   pip install -e ".[dev]"
+   ```

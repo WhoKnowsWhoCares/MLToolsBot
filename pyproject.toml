@@ -5,7 +5,6 @@ description = "Repository for telegram bot which helps user with machine learnin
 authors = ["Alexander <as.frantsev@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-package-mode = false
 
 
 [tool.poetry.dependencies]
@@ -17,6 +16,7 @@ python-dotenv = "^1.0.0"
 redis = "^5.2.1"
 anthropic = "^0.42.0"
 elevenlabs = "^1.50.6"
+annotated-types = "^0.7.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -33,3 +33,26 @@ pytest-asyncio = "^0.23.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry.scripts]
+mltoolsbot = "mltoolsbot.run:main"
+
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+extend-exclude = '''
+(
+  migrations   # Django DB migrations
+)
+'''
+
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+skip_gitignore = true
+skip_glob = ["**/migrations/*", "**/settings/*"]
+src_paths = ["<your_code_dir>"]
