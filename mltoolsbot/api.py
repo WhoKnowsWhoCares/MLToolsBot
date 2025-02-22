@@ -1,24 +1,23 @@
-import os
-import json
+# import os
+# import json
 import io
 import base64
 import httpx
 import asyncio
 
 from anthropic import Anthropic
+from yandex_cloud_ml_sdk import YCloudML
 
 # from elevenlabs.client import ElevenLabs, VoiceSettings
 
-# from redis import Redis
-# from io import BytesIO
 from loguru import logger
 from functools import partial, wraps
 from telegram import Update
 from telegram.ext import ContextTypes
 from mltoolsbot.config import Config
+from mltoolsbot.redis import RedisClient
 
-redis_client = json.loads(os.getenv("REDIS_DEFAULTS")) or {}
-# redis_client = Redis(host=REDIS_HOST, port=REDIS_PORT)
+redis_client = RedisClient()
 
 claude_client = Anthropic(api_key=Config.ANTHROPIC_TOKEN)
 claude_prompt = partial(
@@ -26,6 +25,12 @@ claude_prompt = partial(
     model="claude-3-5-sonnet-20241022",
     max_tokens=1024,
     temperature=0,
+)
+
+ydx_client = YCloudML(folder_id=Config.YDX_FOLDER_ID, auth=Config.YDX_API_KEY)
+ydx_gpt = ydx_client.models.completions("yandexgpt").configure(temperature=0.5)
+ydx_art = ydx_client.models.image_generation("yandex-art").configure(
+    width_ratio=2, height_ratio=1
 )
 
 # elevenlabs_client = ElevenLabs(api_key=Config.TTS_TOKEN)
@@ -72,7 +77,7 @@ def check_auth(func):
         update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs
     ):
         user_id = context.user_data.get("user_id") or kwargs.get("user_id")
-        value = redis_client.get(user_id)
+        value = redis_client.get_value(user_id)
         # user_data = json.loads(value) if value else None
         if not value:
             logger.info(f"User {user_id} not authorized")
@@ -102,7 +107,7 @@ def check_auth(func):
 #         for chunk in response:
 #             audio_stream.write(chunk)
 #         audio_stream.seek(0)
-#         logger.info("Response recieved")
+#         logger.info("Response received")
 #         await context.bot.send_audio(
 #             chat_id=update.effective_chat.id,
 #             audio=audio_stream,
@@ -117,34 +122,58 @@ def check_auth(func):
 
 
 @check_auth
-async def call_api_claude(
+async def call_api_ydx_gpt(
     update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: str, text: str
 ) -> None:
     """
-    Makes a request to the Ollama API to generate a response based on a given
-    message using Gemma model.
+    Makes a request to the Yandex API to generate a response.
     """
     try:
-        command = context.user_data.get("command")
+        system = {
+            "role": "system",
+            "text": "Ты - персональный ассистент. Ответь на следующий вопрос максимально содержательно в пяти предложениях",
+        }
+        messages = redis_client.get_value(f"{user_id}-ydx-context") or [system]
+        messages.append({"role": "user", "text": text})
+        response = ydx_gpt.run(messages).alternatives[0].text
+        messages.append({"role": "assistant", "text": response})
+        redis_client.set_value(f"{user_id}-ydx-context", messages)
+        logger.info("Response received")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
+    except Exception as e:
+        logger.error(e)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, text="Sorry, something went wrong"
+        )
+
+
+@check_auth
+async def call_api_claude(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    user_id: str,
+    text: str,
+    command: str,
+) -> None:
+    """
+    Makes a request to the Claude API to generate a response based on a given message.
+    """
+    try:
+        messages = []
         if command == Config.SUMMARIZE:
             system = "You should summarize next sentence:"
         elif command == Config.TRANSLATE:
             system = "Translate to english:"
-        else:
+        elif command == Config.CLAUDE_LLM:
+            messages = redis_client.get_value(f"{user_id}-claude-context") or []
             system = "You are best personal assistant. Respond only with short answer no more than five sentences."
-        response = claude_prompt(
-            system=system,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [{"type": "text", "text": text}],
-                }
-            ],
-        )
-        logger.info("Response recieved")
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, text=response.content[0].text
-        )
+        messages.append({"role": "user", "content": text})
+        response = claude_prompt(system=system, messages=messages).content[0].text
+        if command == Config.CLAUDE_LLM:
+            messages.append({"role": "assistant", "content": response})
+            redis_client.set_value(f"{user_id}-claude-context", messages)
+        logger.info("Response received")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=response)
     except Exception as e:
         logger.error(e)
         await context.bot.send_message(
@@ -170,7 +199,7 @@ async def call_api_local_llm(
                 json=payload,
             )
             response.raise_for_status()
-            logger.info("Response recieved")
+            logger.info("Response received")
             await context.bot.send_message(
                 chat_id=update.effective_chat.id, text=response.json()["response"]
             )
@@ -202,7 +231,7 @@ async def call_api_sd(
     """
     payload = Config.SD_PAYLOAD.copy()
     payload["prompt"] = text
-    # user_info = redis_client.get(user_id)
+    # user_info = redis_client.get_value(user_id)
     try:
         async with httpx.AsyncClient() as client:
             logger.info(f"Request for status {Config.SD_SERVER_URL}")
@@ -219,8 +248,38 @@ async def call_api_sd(
             )
             response.raise_for_status()
             image = io.BytesIO(base64.b64decode(response.json()["images"][0]))
-            logger.info("Image recieved")
+            logger.info("Image received")
             await context.bot.send_photo(chat_id=update.effective_chat.id, photo=image)
+    except httpx.TimeoutException as e:
+        logger.error(f"HTTP TimeoutException for {e.request.url} - {e}")
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, text="Sorry, image service unavailable"
+        )
+    except httpx.HTTPError as e:
+        logger.error(f"HTTP Exception for {e.request.url} - {e}")
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, text="Sorry, something went wrong"
+        )
+    except Exception as e:
+        logger.error(e)
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id, text="Sorry, something went wrong"
+        )
+
+
+@check_auth
+async def call_api_ydx_art(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: str, text: str
+) -> None:
+    """
+    Makes a request to the Yandex API to generate image.
+    """
+    try:
+        logger.info("Request for yandex api")
+        response = ydx_art.run_deferred(text).wait()
+        image = io.BytesIO(response.image_bytes)
+        logger.info("Image received")
+        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=image)
     except httpx.TimeoutException as e:
         logger.error(f"HTTP TimeoutException for {e.request.url} - {e}")
         await context.bot.send_message(

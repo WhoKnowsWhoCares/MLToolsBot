@@ -10,13 +10,14 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.11"
 loguru = "^0.7.2"
-python-telegram-bot = "^20.7"
+python-telegram-bot = "21.10"
 aiolimiter = "^1.1.0"
 python-dotenv = "^1.0.0"
 redis = "^5.2.1"
 anthropic = "^0.42.0"
 elevenlabs = "^1.50.6"
 annotated-types = "^0.7.0"
+yandex-cloud-ml-sdk = "^0.3.1"
 
 
 [tool.poetry.group.dev.dependencies]

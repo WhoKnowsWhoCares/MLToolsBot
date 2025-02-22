@@ -2,16 +2,20 @@ import os
 from dotenv import load_dotenv
 from telegram.ext import ConversationHandler
 from mltoolsbot.exceptions import ConfigError
+from loguru import logger
 
 load_dotenv()
 
 
 class Config:
+    logger.info("Init config")
     BOT_TOKEN = os.getenv("BOT_TOKEN")
     ANTHROPIC_TOKEN = os.getenv("ANTHROPIC_TOKEN")
     TTS_TOKEN = os.getenv("ELEVENLABS_TOKEN")
-    REDIS_HOST = os.getenv("REDIS_HOST")
-    REDIS_PORT = os.getenv("REDIS_PORT")
+    YDX_FOLDER_ID = os.getenv("YDX_FOLDER_ID")
+    YDX_API_KEY = os.getenv("YDX_API_KEY")
+    REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+    REDIS_PORT = os.getenv("REDIS_PORT", 6379)
     SD_SERVER_URL = os.getenv("SD_SERVER_URL")
     LLM_SERVER_URL = os.getenv("LLM_SERVER_URL")
 
@@ -24,10 +28,12 @@ class Config:
     # State definitions for top level conversation
     SELECTING_ACTION, TEXT2TEXT, TEXT2IMG = map(chr, range(3))
     # State definitions for text2text level conversation
-    SELECTING_PROMPT, SUMMARIZE, TRANSLATE = map(chr, range(3, 6))
+    SELECTING_PROMPT, SUMMARIZE, TRANSLATE, CLAUDE_LLM, YDX_LLM = map(chr, range(3, 8))
+    SUBCOMMANDS = [TEXT2TEXT, SUMMARIZE, TRANSLATE, CLAUDE_LLM, YDX_LLM, TEXT2IMG]
     # Meta states
-    TYPING, STOPPING, START_OVER = map(chr, range(6, 9))
+    TYPING, STOPPING, START_OVER = map(chr, range(8, 11))
     END = ConversationHandler.END
+    TIMEOUT = ConversationHandler.TIMEOUT
 
     SD_PAYLOAD = {
         "prompt": "",
@@ -62,9 +68,13 @@ class Config:
     }
 
     HELP_TEXT = """
-        Useful commands:
-        /text2text - I will generate response according to your request. LLM Model: Claude-3.5-sonnet
-        /text2img - I will create image according to your description. SD Model: Flux
+    Use /start to begin, /stop to end. Commands:
+    text2text - generate response according to your request
+        summarize - summarize input text
+        translate - translate input to english
+        claude - general conversation with claude-3.5-sonnet model
+        yandex - general conversation with yandex-gpt model
+    text2img - create image according to your description using yandex-art
     """
 
     @classmethod

@@ -14,7 +14,7 @@ from telegram.ext import (
 )
 from aiolimiter import AsyncLimiter
 from mltoolsbot.config import Config, ConfigError
-from mltoolsbot.api import call_api_claude, call_api_sd
+from mltoolsbot.api import call_api_claude, call_api_ydx_art, call_api_ydx_gpt
 from mltoolsbot.exceptions import error_handler
 from loguru import logger
 from warnings import filterwarnings
@@ -27,10 +27,8 @@ filterwarnings(
 limiter = AsyncLimiter(2)
 
 # TODO: Add exception handling
-# TODO: Add response timeout to callbacks
 
 
-# Top level conversation callbacks
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
     """Select an action: Start new task."""
     text = "You may choose what task I should help you with. To stop conversation use /stop command."
@@ -60,6 +58,13 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     return Config.END
 
 
+async def stop_second_level(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """End Conversation by command."""
+    logger.info("User canceled the conversation by /stop command.")
+    await update.message.reply_text("Okay, bye.")
+    return Config.STOPPING
+
+
 async def end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """End conversation from InlineKeyboardButton."""
     logger.info("User canceled the conversation.")
@@ -76,10 +81,11 @@ async def end_second_level(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     return Config.END
 
 
-async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Help command"""
     logger.info("Help command activated")
     await update.message.reply_text(f"{Config.HELP_TEXT}")
+    return
 
 
 async def select_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str:
@@ -91,6 +97,10 @@ async def select_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> s
             InlineKeyboardButton(text="summarize", callback_data=str(Config.SUMMARIZE)),
             InlineKeyboardButton(text="translate", callback_data=str(Config.TRANSLATE)),
             InlineKeyboardButton(text="cancel", callback_data=str(Config.END)),
+        ],
+        [
+            InlineKeyboardButton(text="claude", callback_data=str(Config.CLAUDE_LLM)),
+            InlineKeyboardButton(text="yandex", callback_data=str(Config.YDX_LLM)),
         ],
     ]
     keyboard = InlineKeyboardMarkup(buttons)
@@ -109,7 +119,9 @@ async def ask_for_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> s
     return Config.TYPING
 
 
-async def proceed_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def proceed_command(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> str | int:
     """
     Handles text messages received by the bot.
     For text-to-text or text-to-image conversion, and calls the corresponding
@@ -119,26 +131,34 @@ async def proceed_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     user_id = str(update.message.from_user.id)
     command = context.user_data.get("command")
-    logger.info(f"Check command: {command}")
+    context.user_data["command"] = ""
+    if command not in Config.SUBCOMMANDS:
+        status_msg = await update.message.reply_text("Sorry unknown request. 😔")
+        return ConversationHandler.END
 
-    if command in [Config.SUMMARIZE, Config.TRANSLATE]:
+    status_msg = await update.message.reply_text("Proceed request... 👨‍💻")
+    next = ConversationHandler.END
+    if command in [Config.SUMMARIZE, Config.TRANSLATE, Config.CLAUDE_LLM]:
         logger.info("Proceed text2text claude api")
-        status_msg = await update.message.reply_text("Proceed request... 👨‍💻")
-        async with limiter:
-            await call_api_claude(update, context, user_id=user_id, text=text)
+        await call_api_claude(
+            update, context, user_id=user_id, text=text, command=command
+        )
+        if command == Config.CLAUDE_LLM:
+            next = Config.TYPING
+            context.user_data["command"] = Config.CLAUDE_LLM
+    elif command == Config.YDX_LLM:
+        logger.info("Proceed text2text yandex api")
+        await call_api_ydx_gpt(update, context, user_id=user_id, text=text)
+        next = Config.TYPING
+        context.user_data["command"] = Config.YDX_LLM
     elif command == Config.TEXT2IMG:
         logger.info("Proceed text2img")
-        status_msg = await update.message.reply_text("Proceed request... 👨‍💻")
-        async with limiter:
-            await call_api_sd(update, context, user_id=user_id, text=text)
-    else:
-        status_msg = await update.message.reply_text("Sorry unknown request. 😔")
-        return
+        await call_api_ydx_art(update, context, user_id=user_id, text=text)
 
-    context.user_data["command"] = ""
     await context.bot.delete_message(
         chat_id=update.effective_chat.id, message_id=status_msg.message_id
     )
+    return next
 
 
 def create_application():
@@ -157,7 +177,7 @@ def create_application():
                 Config.SELECTING_PROMPT: [
                     CallbackQueryHandler(
                         ask_for_input,
-                        pattern=f"^{Config.SUMMARIZE}$|^{Config.TRANSLATE}$",
+                        pattern="^" + "$|^".join(Config.SUBCOMMANDS) + "$",
                     )
                 ],
                 Config.TYPING: [
@@ -166,13 +186,14 @@ def create_application():
             },
             fallbacks=[
                 CallbackQueryHandler(end_second_level, pattern=f"^{Config.END}$"),
-                CommandHandler("stop", stop),
+                CommandHandler("stop", stop_second_level),
             ],
             map_to_parent={
-                Config.END: Config.SELECTING_ACTION,
                 Config.STOPPING: Config.END,
+                Config.END: Config.SELECTING_ACTION,
             },
         )
+        # first-level conversation handler
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler("start", start)],
             states={
@@ -184,11 +205,11 @@ def create_application():
                 Config.TYPING: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, proceed_command)
                 ],
-                Config.STOPPING: [CommandHandler("start", start)],
             },
             fallbacks=[CommandHandler("stop", stop)],
         )
         application.add_handler(conv_handler)
+        application.add_handler(CommandHandler("help", help))
         application.add_error_handler(error_handler)
     except Exception as e:
         logger.error(f"Error creating application: {str(e)}")

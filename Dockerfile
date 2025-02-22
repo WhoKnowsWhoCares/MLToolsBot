@@ -26,11 +26,13 @@ ENV BOT_TOKEN=${BOT_TOKEN} \
     ELEVENLABS_TOKEN=${ELEVENLABS_TOKEN} \
     SD_SERVER_URL=${SD_SERVER_URL} \
     LLM_SERVER_URL=${LLM_SERVER_URL} \
+    REDIS_HOST=${REDIS_HOST} \
+    REDIS_PORT=${REDIS_PORT} \
     REDIS_DEFAULTS=${REDIS_DEFAULTS}
 
 COPY --from=builder /app /app
 
 WORKDIR /app
-COPY main.py redis-init.sh /app/
+COPY /mltoolsbot /app/mltoolsbot
 
-CMD ["python", "main.py"]
+CMD ["python","-m","mltoolsbot.run"]
